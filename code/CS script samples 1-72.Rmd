@@ -1,0 +1,355 @@
+---
+title: "Citrate Synthase Enzyme Assay"
+output: pdf_document
+author: Olivia Catttau | oliviacattau@gmail.com
+---
+# Citrate Sythase Enzyme Data Analysis
+## Load Samples
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+#load samples 1-23
+CS_1<-read.csv("https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/3.22.22%20CS%20activity%201-23.csv") #standards, and samples 1-23 only
+#attach labels
+wells<-c(0, 8, 16, 24, 32, 40, "R46", "R46", "R46", "M89", "M89", "M89", "M41", "M41", "M41", "D55", "D55", "D55", "D56", "D56", "D56", "X42", "X42", "X42", "T62", "T62", "T62", "T59", "T59", "T59", "D58", "D58", "D58", "R50", "R50", "R50", "R42", "R42", "R42", "R48", "R48", "R48", "T56", "T56", "T56", "X44", "X44", "X44", "R47", "R47", "R47", "N45", "N45", "N45", "N44", "N44", "N44", "X43", "X43", "X43", "M47", "M47", "M47", "T58", "T58", "T58", "N46", "N46", "N46", "T61", "T61", "T61", "D59", "D59", "D59", "POS", "POS", "POS", "BCKGRD", "BCKGRD", "BCKGRD")
+CS<-CS_1[-c(811,812),] #clean data
+names(CS)[7]<-'Label'
+names(CS)[6]<-'A'
+CS$Label<-rep(wells, 10) #label all replicates
+
+#load samples 24-48
+CS_2<-read.csv("https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/CS%20activity%2024-48.csv") #samples 24-48 only 
+wells2<-c("N42", "N42", "N42", "T55", "T55", "T55", "M48", "M48", "M48", "X47", "X47", "X47", "N43", "N43", "N43", "M90",	"M90",	"M90", "R58", "R58", "R58", "R60", "R60", "R60", "R78", "R78", "R78", "N49", "N49", "N49", "M42", "M42", "M42", "N59","N59", "N59", "N57", "N57", "N57", "M49", "M49", "M49", "D54", "D54", "D54", "T57", "T57", "T57", "X45", "X45", "X45", "N41", "N41", "N41", "X48", "X48", "X48", "M43", "M43", "M43", "X41", "X41", "X41",  "M46", "M46", "M46", "N47", "N47", "N47", "R62", "R62", "R62", "empty")
+CS_2['Label'] <- NA
+names(CS_2)[7]<-'Label'
+names(CS_2)[6]<-'A'
+CS_2$Label<-rep(wells2, 10)
+CS_2$Plate<-rep(2, 10)
+
+#load samples 48-72
+CS_3<-read.csv("https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/CS%20activity%203.22.22%2049-72.csv") #samples 49 to 72 only 
+wells3<-c("N58", "N58", "N58", "R53", "R53", "R53", "R56", "R56", "R56", "N48", "N48", "N48", "N51", "N51", "N51", "N54", "N54", "N54", "R51", "R51", "R51", "N56", "N56", "N56", "R57", "R57", "R57", "N53", "N53", "N53", "N57", "N57", "N57", "X46", "X46", "X46", "N52", "N52", "N52", "R54", "R54", "R54", "R59", "R59", "R59", "N50", "N50", "N50", NA, NA, NA, "R52", "R52", "R52", "N55", "N55", "N55", "M45", "M45", "M45", "empty" )
+CS_3['Label'] <- NA
+names(CS_3)[7]<-'Label'
+names(CS_3)[6]<-'A'
+CS_3$Label<-rep(wells3, 12) #note rep=12 not 10
+
+###View controls
+controls<-c(0,'BCKGRD', 'POS')
+controls2<-subset(CS, Label == controls)
+quickview<-ggplot(data=controls2, aes(x=Repeat, y=A, color=Label))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)
+#positive control and 0 looks good
+#based on controls, I would subtract Repeat 10 values from Repeat 1 values 
+
+####Extract Data
+#samples 1-23
+samples<-c("R46", "M89", "M41", "D55", "D56", "X42", "T62", "T59", "D58", "R50",  "R42",  "R48",  "T56",  "X44",  "R47", "N45", "N44", "X43", "M47",  "T58", "N46", "T61", "D59")
+mydata<-filter(CS, CS$Label %in% samples)
+#samples 24-48
+samples2<-c("N42", "T55", "M48", "X47", "N43","M90", "R58", "R60", "R78", "N49", "M42", "N59", "N57", "M49", "D54", "T57", "X45", "N41", "X48", "M43", "X41", "M46",  "N47", "R62", "empty")
+mydata2<-filter(CS_2, CS_2$Label %in% samples2)
+#samples 49-72
+samples3<-c("N58", "R53","R56",  "N48",  "N51",  "N54",  "R51", "N56",  "R57", "N53", "N57", "X46", "N52", "R54", "R59", "N50", "R52", "N55", "M45", "empty")
+mydata3<-filter(CS_3, CS_3$Label %in% samples3)
+
+#view data
+quickview2<-ggplot(data=mydata, aes(x=Repeat, y=A, color=(Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)+scale_x_continuous(breaks=seq(1, 10, by=1))
+quickview2 
+
+quickview3<-ggplot(data=mydata2, aes(x=Repeat, y=A, color=(Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)+scale_x_continuous(breaks=seq(1, 10, by=1))
+quickview3
+
+quickview4<-ggplot(data=mydata3, aes(x=Repeat, y=A, color=(Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)+scale_x_continuous(breaks=seq(1, 10, by=1))
+quickview4 #looks great!
+
+##########################Get CS results######################
+
+time_i<-subset(CS, CS$Repeat==1) #pick minimum data point
+time_f<-subset(CS, CS$Repeat==10) #pick maximum data point
+
+time_ii<-subset(CS_2, CS_2$Repeat==1) #pick minimum data point
+time_ff<-subset(CS_2, CS_2$Repeat==10) #pick maximum data point
+
+time_iii<-subset(CS_3, CS_3$Repeat==1) #pick minimum data point
+time_fff<-subset(CS_3, CS_3$Repeat==10) #pick maximum data point
+
+
+time_0<-rbind(time_i, time_ii, time_iii)
+time_45<-rbind(time_f, time_ff, time_fff)
+
+initial<-time_0 %>% 
+  group_by(Label) %>%
+  summarise(meanA = mean(A))
+
+final<-time_45 %>% 
+  group_by(Label) %>%
+  summarise(meanA = mean(A))
+
+# Make CS standard curve 
+cs_standards<-CS[c(1:6),] #set standards and removed outliers
+standards<-as.numeric(c(0, 8, 16, 24, 32, 40)) #relabel
+cs_standards$GSH<-standards
+
+#plot CS standards
+standard_plot<-ggplot(data=cs_standards,(aes(x=A, y=GSH)))+geom_point()+geom_smooth(method="lm", se=FALSE, formula = y ~ poly(x, 1) )+xlab("A @ 570nm")+ylab("GSH")+theme_bw()+stat_regline_equation(label.x=0.25, label.y=20)
+standard_plot
+#extract equation from chart
+
+#y=(-0.29) + 96 x
+
+#####Calculate Delta OD
+final<-final[-c(1:7, 13, 43, 75),] #this will change each time
+initial<-initial[-c(1:7, 13, 43, 75),] #removing standards
+deltaOD<-final$meanA-initial$meanA
+results<-mutate(initial, OD=deltaOD) #OD is the delta OD for the samples
+
+
+####get BSA data#####
+#load samples 1-24
+bsa<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/BSA%201-23%203.22.csv")
+names(bsa)[6]<-'A'
+wells<-c(2000, 1500, 1000, 750, 500, 250, 125, 0, "R46", "R46", "R46", "M89", "M89", "M89", "M41", "M41", "M41", "D55", "D55", "D55", "D56", "D56", "D56", "X42", "X42", "X42", "T62", "T62", "T62", "T59", "T59", "T59", "D58", "D58", "D58", "R50", "R50", "R50", "R42", "R42", "R42", "R48", "R48", "R48", "T56", "T56", "T56", "X44", "X44", "X44", "R47", "R47", "R47", "N45", "N45", "N45", "N44", "N44", "N44", "X43", "X43", "X43", "M47", "M47", "M47", "T58", "T58", "T58", "N46", "N46", "N46", "T61", "T61", "T61", "D59", "D59", "D59", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+bsa$Label<-rep(wells, 3)
+
+#load samples 24-48
+bsa_2<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/BSA%203.22.22%2024-48.csv")
+names(bsa_2)[6]<-'A'
+wells2<-c("N42", "N42", "N42", "T55", "T55", "T55", "M48", "M48", "M48", "X47", "X47", "X47", "X47", "X47", "X47", "N43", "N43", "N43", "M90",	"M90",	"M90", "R58", "R58", "R58", "R60", "R60", "R60", "R78", "R78", "R78", "N49", "N49", "N49", "M42", "M42", "M42", "N59","N59", "N59", "N57", "N57", "N57", "M49", "M49", "M49", "D54", "D54", "D54", "T57", "T57", "T57", "X45", "X45", "X45", "N41", "N41", "N41", "X48", "X48", "X48", "M43", "M43", "M43", "X41", "X41", "X41",  "M46", "M46", "M46", "N47", "N47", "N47", "R62", "R62", "R62", "empty", "empty", "empty")
+bsa_2$Label<-rep(wells2, 3)
+bsa_2$Plate<-rep(2, 3)
+
+#load samples 48-72
+bsa_3<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/BSA%203.22.22%2049-70.csv")
+names(bsa_3)[6]<-'A'
+wells3<-c("N58", "N58", "N58", "R53", "R53", "R53", "N48", "N48", "N48", "N51", "N51", "N51", "N54", "N54", "N54", "N51", "N51", "N51", "N56", "N56", "N56", "R57", "R57", "R57", "N53", "N53", "N53", "N57", "N57", "N57", "X46", "X46", "X46", "N52", "N52", "N52", "R56", "R56", "R56", "R54", "R54", "R54", "R59", "R59", "R59", "N50", "N50", "N50", "R55", "R55", "R55", "R52", "R52", "R52", "N55", "N55", "N55", "M45", "M45", "M45", "empty", "empty", "empty")
+bsa_3$Label<-rep(wells3, 3)
+bsa_3$Plate<-rep(3,3)
+
+bsa_72<-rbind(bsa, bsa_2, bsa_3)
+
+#extract equation from standard plot
+bsa_standards<-bsa_72[c(1:7, 88:95, 175:182),]
+#bsa_standards<-bsa[c(175:182),]
+
+#make plot
+reverse_plot<-ggplot(data=bsa_standards,(aes(x=A, y=as.numeric(Label))))+geom_point()+geom_smooth(method="lm", se=FALSE, formula = y ~ x )+theme_bw()+stat_regline_equation(label.x=0.6, label.y=500)+ylab("ug/mL")
+
+reverse_plot
+#y=(-2500) + 3000x
+
+A<-bsa_72 %>% 
+  group_by(Label) %>%
+  summarise(meanA = mean(A))
+#N49 outlier, out of BSA range, remove at line ###
+
+A_samples<-A[-c(1:8, 14, 75),]
+
+protein_content<-(3000*A_samples$meanA)-2500 #with no correction
+protein_content[protein_content < 0]<-NA #<0 ug/mL is out of range for BSA
+
+
+sample_list<-read.csv("https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/weights.csv")
+joined<-inner_join(A_samples, sample_list, by="Label") #from CS sample list 
+P<-(protein_content)/1000/1000 #ug/ml-> ug/uL-> mg/uL  also equal to total protein extracted 
+BSA_results<-mutate(A_samples, protein_content, P) 
+
+######Calculate Final Values
+#y=(-0.29) + 96 x (CS activity)
+t<-45 #min
+m<-96
+b<-(-0.29)
+GSH<-(m*deltaOD)+b 
+V<-50 #uL from procedure 
+D<-1 #dilution coefficient, should be 1 since we did not dilute
+CS_activity<-(GSH/(t*V))*D/P
+results<-mutate(initial, OD=deltaOD, GSH=GSH, "Protein (ug/mL) "= protein_content, "Protein (mg/ul)"=P, "CS activity (nmol/(mg*min))"=CS_activity  ) #OD is the delta OD for the samples
+
+ploidy<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/ploidy.csv")
+names(ploidy)[1]<-'Label'
+
+treatment<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/treatments.csv")
+
+trt<-treatment[c(1:72),]
+names(trt)[2]<-'Label'
+results_joined<-inner_join(results, ploidy , by="Label") #from CS sample list 
+results_joined<-inner_join(results_joined, trt, by="Label")
+
+#results_positive <- results_joined                   # Duplicate data frame
+#results_positive[results_positive < 0] <- 0     # Set negative values to 0
+
+final_plot<-ggplot(data=results_joined,(aes(x=`Protein (ug/mL) `, y=`CS activity (nmol/(mg*min))`, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (ug/mL)")
+
+#write.csv(results_joined, file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/result_72.csv")
+##################Add redos from July 11-12##########################
+#all samples including duplicates
+results_all<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/results_all.csv")
+
+results_all<-results_all[-c(40),]#removed outlier @ 160 CS (really high)
+
+all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS_activity, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+
+#unique samples only
+results_unique<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/results_unique.csv")
+
+results_unique<-results_unique[-c(37),]
+results_unique['heat']<-NA
+results_unique$heat<-sub("..", "", results_unique$trt_list)
+
+u_plot<-ggplot(data=results_unique,(aes(x=Protein..mg.ul., y=CS_activity, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+u_plot
+```
+
+
+## Statistical Analysis 
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+#see https://benwhalley.github.io/just-enough-r/anova.html for statistcal methods
+###################Statistical Analysis########################
+
+#null hypothesis: groups are not significantly different from each other (i.e, they are the same)
+#alternative hypothesis: group are significantly different from each other 
+
+oysterANOVA<-lm(CS_activity~heat, data=results_unique)#Citrate Synthase response to treatment explanatory
+oysterANOVA2<-lm(CS_activity~ploidy, data=results_unique) # Citrate Synthase response to ploidy explanatory
+oysterANOVA3<-lm(CS_activity~ploidy*heat, data=results_unique)
+
+car::Anova(oysterANOVA) #heat treatment is having a significant effect on CS results 
+car::Anova(oysterANOVA2) #no different between triploid and diploid 
+car::Anova(oysterANOVA3) #combined heat+ploidy is NOT having a significant effect on CS results
+
+combinedANOVA<-lm(CS_activity~trt_list, data=results_unique)
+table1<-do.call(rbind.data.frame, (TukeyHSD(aov(combinedANOVA))))
+#Table 1 below
+combined.lsm<-emmeans::emmeans(combinedANOVA, pairwise~trt_list)
+combined.contrasts<-emmeans::contrast(combined.lsm, "eff")
+combined.contrasts$contrasts
+#reject the null when p<0.05 for each pair-wise comparison 
+#cannot reject the null for everything except T-desiccation/T-heat/T-control and D-desiccation/D-heat (D-control and D-desiccation are at 0.053) 
+```
+
+# Morphometrics Data Analysis
+### factors for GLM
+-Shell Length
+-Shell Width
+-Shell Height
+-Shell Volume 
+-Calculated Dry Weights (based on actual Dry Weights of a sub-cohort)
+-Ploidy (triploid/diploid)
+-Heat (control/heat/desiccation) 
+-Heat + Ploidy is trt_list
+-Sample Date (7.12.21 or 7.13.21) is dissection date
+-Date (3.22.22 or 7.11.22) is CS assay date
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(tidyr)
+#install.packages("faraway")
+library(faraway)
+
+#filter data
+morph<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/morphometrics_CS.csv")
+
+names<-results_unique$Label
+print(names)
+
+filter_my_data<-morph %>%
+  filter(morph$ID %in% names)
+
+filter_my_data<-filter_my_data[-c(2,7)]
+names(filter_my_data)[1]<-'Label'
+
+#keep: ploidy, trt, shell_length, shell_width, shell_height, mortality, shell volume, cal_dry_weight, ploidy.trt, tank
+
+filtered_morph<- as.data.frame(filter_my_data %>%
+  left_join(results_unique, by="Label")) %>% 
+  mutate(sample_date = na_if(sample_date, "missing"))
+
+filtered_morph2<-filtered_morph[-c(44),]
+
+
+######calculate GLM
+#Null Hypothesis: none of the grouping variables, such as shell volume, should be significantly different from each other in regards to CS response
+#Alternative Hypothesis: if significant, then the significant variable explains some variation in the CS response
+
+#direct GLM (all variables)
+morphANOVA<-lm(CS_activity~ shell_length+shell_width+shell_height+date+calc_dry_weight+ploidy+tank+heat, data=filtered_morph2)
+
+car::Anova(morphANOVA)#shell morphometrics are not significant
+
+table2<-car::Anova(morphANOVA)
+
+#Trt and Date
+trt_date<-ggplot(filtered_morph, aes(fill=trt_list, x=sample_date))+geom_bar()+theme_bw()
+trt_date #non-random distribution, pull it out of analysis so only trt and ploidy+trt are significant
+
+#interactions
+morphANOVA2<-lm(CS_activity~trt_list*shell_volume*shell_length+shell_width*shell_height*calc_dry_weight*ploidy*heat*ploidy*date*tank, data=filtered_morph2)
+
+anova(morphANOVA2) #calculated dry weight * date of sample are significant but since date of sample is a non-random distribution it violates the assumptions of the test and therefore cannot be used. 
+
+supp1<-anova(morphANOVA2)
+
+summary(morphANOVA2)$r.squared #0.99!
+
+#mortality
+final_mort<-c(94.318, 90.909, 85.227, 77.272, 90.909, 63.636)
+final_list<-c("D-control", "D-heat", "D-desiccation", "T-control", "T-heat", "T-desiccation")
+xxy<-data.frame(final_mort, final_list)
+
+mortality<-ggplot(data=xxy, aes(x=final_list, y=final_mort, group=1))+geom_line()+geom_point()+theme_bw()
+
+mortality
+```
+
+## Data Visualization 
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(tidyr)
+#### All plots
+boxplot<-ggplot(data=results_unique, aes(x=factor(trt_list), y=CS_activity))+
+  geom_boxplot(aes(x=factor(trt_list), y=CS_activity, color=ploidy))+
+  theme_bw()+
+  ylab(expression('CS activity nmol' (min^-1) (mg^-1)))+
+  xlab("Treatment Group")+ 
+  stat_compare_means(comparisons=list(c("T-heat", "T-desiccation")), method = "wilcox.test", aes(label="..p.signif.."), label.y=19)+
+  stat_compare_means(comparisons=list(c("T-control", "T-desiccation")), method = "wilcox.test", aes(label="..p.signif.."), label.y=17)+
+  stat_compare_means(comparisons=list(c("D-desiccation", "T-desiccation")), method = "wilcox.test", aes(label="..p.signif.."), label.y=23)+geom_line(data=xxy, aes(x=final_list, y=final_mort/3, group=1),color="red", linetype="dashed")+scale_y_continuous(limits=c(0,34),
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~.*3, name="% survival")
+  ) +theme(axis.title.y.right = element_text(color="red"))
+
+boxplot
+
+comparisons=list(c("T-heat", "T-desiccation"),c("T-desiccation", "T-control"), c("D-desiccation", "T-desiccation"))
+
+boxplot2<-ggplot(data=results_unique, xaxt="n", aes(factor(ploidy), CS_activity))+geom_boxplot(aes(x=factor(ploidy), y=CS_activity, color=ploidy))+theme_bw()+ylab("CS Activity (nmol/(mg*min)")+xlab("Treatment Group")+stat_compare_means(comparisons = list(c("D", "T")), method= "wilcox.test", aes(label="..p.signif.."))
+boxplot2 #not significant
+
+#Trt and Date
+trt_date<-ggplot(filtered_morph, aes(fill=trt_list, x=sample_date))+geom_bar()+theme_bw()
+trt_date #non-random distribution, pull it out of analysis 
+
+#Calculated Dry Weight
+cdw<-ggplot(filtered_morph, aes(y=calc_dry_weight, x=trt_list))+geom_boxplot()+theme_bw()+ylab("Calculated Dry Weight")
+cdw #triploid animals have a larger range of dry weights than diploid animals but their averages are all similar. 
+filtered_morph
+oysterANOVA4<-lm(calc_dry_weight~trt_list, data=filtered_morph)
+anova(oysterANOVA4)#not significant
+cdw_table<-TukeyHSD(aov(oysterANOVA4))
+cdw_table #nothing is significant 
+```
+
+# Results
+- sample_date is significant but non-random in distrubtion so it is thrown out of the analysis 
+-heat is significant
+-ploidy is NOT significant
+-heat*ploidy (aka treatment groups) is NOT significant 
+
+
