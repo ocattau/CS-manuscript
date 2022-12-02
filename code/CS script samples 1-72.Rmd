@@ -9,6 +9,7 @@ author: Olivia Catttau | oliviacattau@gmail.com
 library(ggplot2)
 library(dplyr)
 library(ggpubr)
+library(knitr)
 #load samples 1-23
 CS_1<-read.csv("https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/3.22.22%20CS%20activity%201-23.csv") #standards, and samples 1-23 only
 #attach labels
@@ -187,7 +188,8 @@ results_all<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploi
 
 results_all<-results_all[-c(40),]#removed outlier @ 160 CS (really high)
 
-all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS_activity, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS.activity..nmol..mg.min.., color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+all_plot
 
 #unique samples only
 results_unique<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/results_unique.csv")
@@ -196,8 +198,13 @@ results_unique<-results_unique[-c(37),]
 results_unique['heat']<-NA
 results_unique$heat<-sub("..", "", results_unique$trt_list)
 
-u_plot<-ggplot(data=results_unique,(aes(x=Protein..mg.ul., y=CS_activity, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
-u_plot
+u_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity, color=trt_list)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+u_plot #figure 2a
+
+u2_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ log(x) ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+u2_plot #figure 2b
+
+kable(results_unique[2:12], cption="Supplementary Table 1")
 ```
 
 
@@ -225,7 +232,7 @@ table1<-do.call(rbind.data.frame, (TukeyHSD(aov(combinedANOVA))))
 #Table 1 below
 combined.lsm<-emmeans::emmeans(combinedANOVA, pairwise~trt_list)
 combined.contrasts<-emmeans::contrast(combined.lsm, "eff")
-combined.contrasts$contrasts
+combined.contrasts
 #reject the null when p<0.05 for each pair-wise comparison 
 #cannot reject the null for everything except T-desiccation/T-heat/T-control and D-desiccation/D-heat (D-control and D-desiccation are at 0.053) 
 ```
