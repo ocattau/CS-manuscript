@@ -81,11 +81,14 @@ time_45<-rbind(time_f, time_ff, time_fff)
 
 initial<-time_0 %>% 
   group_by(Label) %>%
-  summarise(meanA = mean(A))
+  summarise(meanA = mean(A)) #average technical replicates (initial time point) 
 
 final<-time_45 %>% 
   group_by(Label) %>%
-  summarise(meanA = mean(A))
+  summarise(meanA = mean(A)) #average technical replicates (final time point) 
+
+Absorbance_all<-time_45$A-time_0$A
+Absorbance_final<-cbind(time_0, Absorbance_all)
 
 # Make CS standard curve 
 cs_standards<-CS[c(1:6),] #set standards and removed outliers
@@ -128,6 +131,23 @@ bsa_3$Label<-rep(wells3, 3)
 bsa_3$Plate<-rep(3,3)
 
 bsa_72<-rbind(bsa, bsa_2, bsa_3)
+
+#for all replicates (not just technical replicates) used in figure 3b
+Absorbance_final_2<-Absorbance_final[-c(6)]
+Absorbance_final_3<-Absorbance_final_2[-c(1:6, 76:81, 154, 203:205, 215),]
+BSA_reps<-bsa_72[-c(1:8, 78:95, 165:182, 252:684),]
+Absorbance_final_3<-cbind(Absorbance_final_3, BSA_reps$Well, BSA_reps$A)
+Absorbance_4<-merge(Absorbance_final_3, BSA_reps, by="Label", all=TRUE)
+delete.na <- function(DF, n=0) {
+  DF[rowSums(is.na(DF)) <= n,]
+}
+Na_removed_all<-delete.na(Absorbance_4)
+protein_content_na_removed_all<-(((3000*Na_removed_all$A)-2500)/1000/1000)*43 #mg
+#y=(-0.29) + 96 x (CS activity)
+#CS_activity<-(GSH/(t*V))*D/P
+CS_activity_na_removed_all<-((96*Na_removed_all$Absorbance_all)-0.29) #621
+CS_all<-43*(CS_activity_na_removed_all/(45*50))*1/protein_content_na_removed_all #all data points
+CS_all_na_removed<-cbind(Na_removed_all, CS_all, protein_content_na_removed_all)
 
 #extract equation from standard plot
 bsa_standards<-bsa_72[c(1:7, 88:95, 175:182),]
@@ -203,6 +223,9 @@ u_plot #figure 2a
 
 u2_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ log(x) ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
 u2_plot #figure 2b
+
+u3_plot<-ggplot(data=CS_all_na_removed, (aes(x=CS_all_na_removed$protein_content_na_removed_all, y=CS_all)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg)")
+u3_plot #figure 2c
 
 kable(results_unique[2:12], cption="Supplementary Table 1")
 ```
