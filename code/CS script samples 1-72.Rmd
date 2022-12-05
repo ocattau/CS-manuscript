@@ -213,21 +213,23 @@ kable(results_unique[2:12], cption="Supplementary Table 1")
 library(ggplot2)
 library(dplyr)
 library(ggpubr)
-#see https://benwhalley.github.io/just-enough-r/anova.html for statistcal methods
+#see https://benwhalley.github.io/just-enough-r/anova.html for statistical methods
 ###################Statistical Analysis########################
 
 #null hypothesis: groups are not significantly different from each other (i.e, they are the same)
 #alternative hypothesis: group are significantly different from each other 
 
-oysterANOVA<-lm(CS_activity~heat, data=results_unique)#Citrate Synthase response to treatment explanatory
+oysterANOVA<-lm(CS_activity~heat, data=results_unique) # Citrate Synthase response to treatment explanatory
 oysterANOVA2<-lm(CS_activity~ploidy, data=results_unique) # Citrate Synthase response to ploidy explanatory
 oysterANOVA3<-lm(CS_activity~ploidy*heat, data=results_unique)
 
+#since data (heat and ploidy) are factorials, use car::ANOVA()
 car::Anova(oysterANOVA) #heat treatment is having a significant effect on CS results 
 car::Anova(oysterANOVA2) #no different between triploid and diploid 
-car::Anova(oysterANOVA3) #combined heat+ploidy is NOT having a significant effect on CS results
+car::Anova(oysterANOVA3, type=3) #combined heat+ploidy is NOT having a significant effect on CS results
 
 combinedANOVA<-lm(CS_activity~trt_list, data=results_unique)
+#car::Anova()
 table1<-do.call(rbind.data.frame, (TukeyHSD(aov(combinedANOVA))))
 #Table 1 below
 combined.lsm<-emmeans::emmeans(combinedANOVA, pairwise~trt_list)
