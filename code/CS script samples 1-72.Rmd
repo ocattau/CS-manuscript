@@ -35,15 +35,19 @@ CS_3['Label'] <- NA
 names(CS_3)[7]<-'Label'
 names(CS_3)[6]<-'A'
 CS_3$Label<-rep(wells3, 12) #note rep=12 not 10
+```
 
-###View controls
+##View controls
+```{r}
 controls<-c(0,'BCKGRD', 'POS')
 controls2<-subset(CS, Label == controls)
 quickview<-ggplot(data=controls2, aes(x=Repeat, y=A, color=Label))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)
 #positive control and 0 looks good
 #based on controls, I would subtract Repeat 10 values from Repeat 1 values 
+```
 
-####Extract Data
+#Extract Data
+```{r}
 #samples 1-23
 samples<-c("R46", "M89", "M41", "D55", "D56", "X42", "T62", "T59", "D58", "R50",  "R42",  "R48",  "T56",  "X44",  "R47", "N45", "N44", "X43", "M47",  "T58", "N46", "T61", "D59")
 mydata<-filter(CS, CS$Label %in% samples)
@@ -87,10 +91,7 @@ final<-time_45 %>%
   group_by(Label) %>%
   summarise(meanA = mean(A)) #average technical replicates (final time point) 
 
-Absorbance_all<-time_45$A-time_0$A
-Absorbance_final<-cbind(time_0, Absorbance_all)
-
-# Make CS standard curve 
+#Make CS standard curve 
 cs_standards<-CS[c(1:6),] #set standards and removed outliers
 standards<-as.numeric(c(0, 8, 16, 24, 32, 40)) #relabel
 cs_standards$GSH<-standards
@@ -108,8 +109,7 @@ initial<-initial[-c(1:7, 13, 43, 75),] #removing standards
 deltaOD<-final$meanA-initial$meanA
 results<-mutate(initial, OD=deltaOD) #OD is the delta OD for the samples
 
-
-####get BSA data#####
+####get BSA (protein) data#####
 #load samples 1-24
 bsa<-read.csv(file="https://raw.githubusercontent.com/mattgeorgephd/NOPP-gigas-ploidy-temp/main/202107_EXP2/citrate_synthase/Raw%20Data/BSA%201-23%203.22.csv")
 names(bsa)[6]<-'A'
@@ -131,23 +131,6 @@ bsa_3$Label<-rep(wells3, 3)
 bsa_3$Plate<-rep(3,3)
 
 bsa_72<-rbind(bsa, bsa_2, bsa_3)
-
-#for all replicates (not just technical replicates) used in figure 3b
-Absorbance_final_2<-Absorbance_final[-c(6)]
-Absorbance_final_3<-Absorbance_final_2[-c(1:6, 76:81, 154, 203:205, 215),]
-BSA_reps<-bsa_72[-c(1:8, 78:95, 165:182, 252:684),]
-Absorbance_final_3<-cbind(Absorbance_final_3, BSA_reps$Well, BSA_reps$A)
-Absorbance_4<-merge(Absorbance_final_3, BSA_reps, by="Label", all=TRUE)
-delete.na <- function(DF, n=0) {
-  DF[rowSums(is.na(DF)) <= n,]
-}
-Na_removed_all<-delete.na(Absorbance_4)
-protein_content_na_removed_all<-(((3000*Na_removed_all$A)-2500)/1000/1000)*43 #mg
-#y=(-0.29) + 96 x (CS activity)
-#CS_activity<-(GSH/(t*V))*D/P
-CS_activity_na_removed_all<-((96*Na_removed_all$Absorbance_all)-0.29) #621
-CS_all<-43*(CS_activity_na_removed_all/(45*50))*1/protein_content_na_removed_all #all data points
-CS_all_na_removed<-cbind(Na_removed_all, CS_all, protein_content_na_removed_all)
 
 #extract equation from standard plot
 bsa_standards<-bsa_72[c(1:7, 88:95, 175:182),]
@@ -196,9 +179,6 @@ names(trt)[2]<-'Label'
 results_joined<-inner_join(results, ploidy , by="Label") #from CS sample list 
 results_joined<-inner_join(results_joined, trt, by="Label")
 
-#results_positive <- results_joined                   # Duplicate data frame
-#results_positive[results_positive < 0] <- 0     # Set negative values to 0
-
 final_plot<-ggplot(data=results_joined,(aes(x=`Protein (ug/mL) `, y=`CS activity (nmol/(mg*min))`, color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (ug/mL)")
 
 #write.csv(results_joined, file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/result_72.csv")
@@ -206,30 +186,60 @@ final_plot<-ggplot(data=results_joined,(aes(x=`Protein (ug/mL) `, y=`CS activity
 #all samples including duplicates
 results_all<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/results_all.csv")
 
-results_all<-results_all[-c(40),]#removed outlier @ 160 CS (really high)
+results_all<-results_all[-c(40),] #removed outlier @ 160 CS (really high)
+```
 
-all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS.activity..nmol..mg.min.., color=trt)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+## Data Validation Figures
+```{r}
+library(ggplot2)
+#all data points (included redos)
+all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS.activity..nmol..mg.min.., color=trt, label=Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)") +geom_text(hjust=1.5, vjust=0)
 all_plot
 
-#unique samples only
+#load unique samples only (used excel to clean data)
 results_unique<-read.csv(file="/Users/oliviacattau/Documents/GitHub/NOPP-gigas-ploidy-temp/202107_EXP2/citrate_synthase/results/results_unique.csv")
 
 results_unique<-results_unique[-c(37),]
 results_unique['heat']<-NA
 results_unique$heat<-sub("..", "", results_unique$trt_list)
 
-u_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity, color=trt_list)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+u_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity, color=trt_list, label=results_unique$Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")+geom_text(hjust=1.5, vjust=0)
 u_plot #figure 2a
 
-u2_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ log(x) ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")
+u2_plot<-ggplot(data=results_unique,(aes(x=protein_b, y=CS_activity, label=results_unique$Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ log(x) ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)")+geom_text(hjust=1.5, vjust=0)
 u2_plot #figure 2b
-
-u3_plot<-ggplot(data=CS_all_na_removed, (aes(x=CS_all_na_removed$protein_content_na_removed_all, y=CS_all)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg)")
-u3_plot #figure 2c
 
 kable(results_unique[2:12], cption="Supplementary Table 1")
 ```
 
+#Technical Replicates
+```{r}
+Absorbance_all<-time_45$A-time_0$A #OD
+Absorbance_final<-cbind(time_0, Absorbance_all) 
+Absorbance_final_2<-Absorbance_final[-c(3,6)] #removed confusing A and well
+Absorbance_final_3<-Absorbance_final_2[-c(1:6, 76:81, 154, 203:205, 215),]#removed non-valid data points (n=198)
+
+df_bsa_72<-bsa_72 %>% filter(Repeat == 1) 
+
+BSA_reps<-df_bsa_72[-c(1:8, 78:87, 163:165, 226:228),] #removed non-valid data points (n=204)
+
+Absorbance_4<-semi_join(Absorbance_final_3, BSA_reps, by='Label') #size Absorbance_final_3
+
+protein_content_na_removed_all<-(((3000*Na_removed_all$A)-2500)/1000/1000)*43 
+#y=(-0.29) + 96 x (CS activity) from below calculations
+#CS_activity<-(GSH/(t*V))*D/P
+CS_activity_na_removed_all<-((96*Na_removed_all$Absorbance_all)-0.29) #621
+CS_all<-43*(CS_activity_na_removed_all/(45*50))*1/protein_content_na_removed_all #all data points
+CS_all_na_removed<-cbind(Na_removed_all, CS_all, protein_content_na_removed_all) 
+#all data points, not averages
+CS_all_na_removed<-inner_join(CS_all_na_removed, trt, by="Label")
+
+u3_plot<-ggplot(data=CS_all_na_removed, (aes(x=CS_all_na_removed$protein_content_na_removed_all, y=CS_all, label=CS_all_na_removed$Label )))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ x ) +ylab(expression('CS activity nmol' (min^-1) (mg^-1))) +xlab("Protein (mg)")+geom_text(hjust=-0.5, vjust=0)
+u3_plot #figure 2c
+
+
+
+```
 
 ## Statistical Analysis 
 ```{r}
