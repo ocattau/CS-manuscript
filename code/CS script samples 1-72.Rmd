@@ -39,6 +39,10 @@ CS_3$Label<-rep(wells3, 12) #note rep=12 not 10
 
 ##View controls
 ```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(knitr)
 controls<-c(0,'BCKGRD', 'POS')
 controls2<-subset(CS, Label == controls)
 quickview<-ggplot(data=controls2, aes(x=Repeat, y=A, color=Label))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula=y~x)
@@ -48,6 +52,10 @@ quickview<-ggplot(data=controls2, aes(x=Repeat, y=A, color=Label))+geom_point()+
 
 #Extract Data
 ```{r}
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(knitr)
 #samples 1-23
 samples<-c("R46", "M89", "M41", "D55", "D56", "X42", "T62", "T59", "D58", "R50",  "R42",  "R48",  "T56",  "X44",  "R47", "N45", "N44", "X43", "M47",  "T58", "N46", "T61", "D59")
 mydata<-filter(CS, CS$Label %in% samples)
@@ -192,6 +200,9 @@ results_all<-results_all[-c(40),] #removed outlier @ 160 CS (really high)
 ## Data Validation Figures
 ```{r}
 library(ggplot2)
+library(dplyr)
+library(ggpubr)
+library(knitr)
 #all data points (included redos)
 all_plot<-ggplot(data=results_all,(aes(x=results_all$Protein..mg.ul., y=results_all$CS.activity..nmol..mg.min.., color=trt, label=Label)))+geom_point()+theme_bw()+geom_smooth(method="lm", se=FALSE, formula = y ~ x ) + ylab("CS Activity (nmol/(mg*min))") +xlab("Protein (mg/uL)") +geom_text(hjust=1.5, vjust=0)
 all_plot
@@ -223,16 +234,21 @@ df_bsa_72<-bsa_72 %>% filter(Repeat == 1)
 
 BSA_reps<-df_bsa_72[-c(1:8, 78:87, 163:165, 226:228),] #removed non-valid data points (n=204)
 
-Absorbance_4<-semi_join(Absorbance_final_3, BSA_reps, by='Label') #size Absorbance_final_3
+#does not work
+Absorbance_4<-merge.data.frame(Absorbance_final_3, BSA_reps, by='Label', all.x=F, all.y=F, no.dups = TRUE) #merged Protein and CS data
 
-protein_content_na_removed_all<-(((3000*Na_removed_all$A)-2500)/1000/1000)*43 
-#y=(-0.29) + 96 x (CS activity) from below calculations
-#CS_activity<-(GSH/(t*V))*D/P
-CS_activity_na_removed_all<-((96*Na_removed_all$Absorbance_all)-0.29) #621
+#Calculate mg of Protein based on BSA curve (y=300*A-2500) over 43 uL of sample used in CS assay (see protocols)
+protein_content_na_removed_all<-(((3000*Absorbance_4$A)-2500)/1000/1000)*43 
+
+#Calculate CS_activity = (GSH/(t*V))*D/P
+#y=(-0.29) + 96 x (CS activity) from CS standard curve
+CS_activity_na_removed_all<-((96*Absorbance_4$Absorbance_all)-0.29) 
 CS_all<-43*(CS_activity_na_removed_all/(45*50))*1/protein_content_na_removed_all #all data points
 CS_all_na_removed<-cbind(Na_removed_all, CS_all, protein_content_na_removed_all) 
 #all data points, not averages
 CS_all_na_removed<-inner_join(CS_all_na_removed, trt, by="Label")
+
+
 
 u3_plot<-ggplot(data=CS_all_na_removed, (aes(x=CS_all_na_removed$protein_content_na_removed_all, y=CS_all, label=CS_all_na_removed$Label )))+geom_point()+theme_bw()+geom_smooth(method="lm", se=TRUE, formula = y ~ x ) +ylab(expression('CS activity nmol' (min^-1) (mg^-1))) +xlab("Protein (mg)")+geom_text(hjust=-0.5, vjust=0)
 u3_plot #figure 2c
